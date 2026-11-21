@@ -13,3 +13,6 @@ where id=(select id from auth.users where email='YOUR_ADMIN_EMAIL');
 Connect this branch to Vercel as a Preview deployment first. Set the environment variables in Vercel. Promote only after the build, database, login, RLS, and publication-gate tests pass.
 ## Not yet active
 AI provider execution, OCR, document uploads, social platform APIs, ad delivery, analytics reporting and live video embeds require credentials and separate integration tests. No secret keys belong in Git.
+
+## Private research documents
+The second migration creates a private `newsroom-documents` Storage bucket (25 MB maximum). The article editor can upload PDF, DOCX, image, TXT, and Markdown files. Uploaded documents remain unverified; OCR and text extraction from uploaded binaries are not enabled yet. Pasted source text is stored as a research document and can be used by the AI drafting endpoint.
