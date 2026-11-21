@@ -190,3 +190,39 @@ end $$;
 drop trigger if exists trg_prevent_published_article_source_link_mutation on article_sources;
 create trigger trg_prevent_published_article_source_link_mutation before insert or update or delete on article_sources for each row execute function prevent_published_article_source_link_mutation();
 revoke all on function prevent_published_article_source_link_mutation() from public,anon,authenticated;
+
+-- Source documents and tag links attached to a published story are immutable.
+create or replace function prevent_published_research_document_mutation()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare sid bigint;
+begin
+ sid:=case when tg_op='DELETE' then old.source_id else new.source_id end;
+ if sid is not null and exists(select 1 from article_sources ar join articles a on a.id=ar.article_id where ar.source_id=sid and a.status='published') then
+   raise exception 'PUBLISHED_ARTICLE_RESEARCH_DOCUMENT_IS_IMMUTABLE';
+ end if;
+ if tg_op='DELETE' then return old; else return new; end if;
+end $$;
+drop trigger if exists trg_prevent_published_research_document_mutation on research_documents;
+create trigger trg_prevent_published_research_document_mutation before insert or update or delete on research_documents for each row execute function prevent_published_research_document_mutation();
+revoke all on function prevent_published_research_document_mutation() from public,anon,authenticated;
+
+drop policy if exists "article_tags follow article" on article_tags;
+create policy "article tags read" on article_tags for select
+using(exists(select 1 from articles a where a.id=article_id and (a.status='published' or is_staff())));
+create policy "article tags editorial insert" on article_tags for insert to authenticated
+with check(exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','content_editor']::app_role[]));
+create policy "article tags editorial update" on article_tags for update to authenticated
+using(exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','content_editor']::app_role[]))
+with check(exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','content_editor']::app_role[]));
+create policy "article tags editorial delete" on article_tags for delete to authenticated
+using(exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','content_editor']::app_role[]));
+
+drop policy if exists "article_sources staff" on article_sources;
+create policy "article sources read" on article_sources for select to authenticated using(is_staff());
+create policy "article sources editorial insert" on article_sources for insert to authenticated
+with check(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+create policy "article sources editorial update" on article_sources for update to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]))
+with check(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+create policy "article sources editorial delete" on article_sources for delete to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
