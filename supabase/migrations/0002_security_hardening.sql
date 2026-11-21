@@ -256,3 +256,10 @@ end $$;
 drop trigger if exists trg_enforce_social_post_gate on social_posts;
 create trigger trg_enforce_social_post_gate before insert or update on social_posts for each row execute function enforce_social_post_gate();
 revoke all on function enforce_social_post_gate() from public,anon,authenticated;
+
+-- Readers may see only verified source citations attached to published articles.
+create policy "article sources public verified" on article_sources for select to anon,authenticated
+using(
+ exists(select 1 from articles a where a.id=article_id and a.status='published')
+ and exists(select 1 from sources s where s.id=source_id and s.verification in ('verified','official_statement'))
+);
