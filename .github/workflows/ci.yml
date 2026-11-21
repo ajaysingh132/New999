@@ -1,4 +1,7 @@
 name: SANDARBH CI
+concurrency:
+  group: sandarb-2.0-${{ github.ref }}
+  cancel-in-progress: true
 on:
   pull_request:
   push:
