@@ -13,7 +13,9 @@ export default function AIWriterButton(){
    const result=await response.json();
    if(!response.ok)throw new Error(result.error||"AI request failed");
    const draft=result.draft||{};
-   const headline=document.getElementById("headline") as HTMLInputElement|null;\n   const aiFlag=document.getElementById("ai_assistance") as HTMLInputElement|null;if(aiFlag)aiFlag.value="generated";
+   const headline=document.getElementById("headline") as HTMLInputElement|null;
+   const aiFlag=document.getElementById("ai_assistance") as HTMLInputElement|null;
+   if(aiFlag)aiFlag.value="generated";
    const summary=document.getElementById("summary") as HTMLTextAreaElement|null;
    if(headline&&draft.headline)headline.value=draft.headline;
    if(summary&&draft.summary)summary.value=draft.summary;
