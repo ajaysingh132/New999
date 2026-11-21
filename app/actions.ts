@@ -58,6 +58,16 @@ export async function approveForPublication(articleId:string){
  revalidatePath("/");revalidatePath("/newsroom");revalidatePath("/newsroom/"+articleId);
 }
 
+export async function verifySource(sourceId:number,verification:string){
+ const {supabase,profile}=await requireStaff();
+ if(!["fact_checker","managing_editor","chief_editor","super_admin"].includes(profile.role))throw new Error("स्रोत सत्यापन केवल Fact Checker / संपादकीय नेतृत्व कर सकता है।");
+ const allowed=["verified","official_statement","attributed_claim","expert_interpretation","editorial_opinion","unverified","unresolved"];
+ if(!allowed.includes(verification))throw new Error("अमान्य सत्यापन स्थिति।");
+ const {error}=await supabase.from("sources").update({verification}).eq("id",sourceId);
+ if(error)throw new Error(error.message);
+ revalidatePath("/newsroom");
+}
+
 export async function createSocialPost(formData:FormData){
  const {supabase,user,profile}=await requireStaff();
  if(!["social_media_manager","managing_editor","chief_editor","super_admin"].includes(profile.role))throw new Error("आपकी भूमिका सोशल ड्राफ्ट बनाने की अनुमति नहीं देती।");
