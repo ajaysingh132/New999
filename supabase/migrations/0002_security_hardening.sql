@@ -93,7 +93,7 @@ create policy "audit no client delete" on audit_logs for delete to authenticated
 drop policy if exists "profiles update own" on profiles;
 create policy "profiles update own name only" on profiles for update to authenticated
 using((select auth.uid())=id)
-with check((select auth.uid())=id and role=(select p.role from profiles p where p.id=(select auth.uid())));
+with check((select auth.uid())=id);
 
 -- Restrict SECURITY DEFINER helpers. RLS uses the role helpers only for authenticated sessions.
 revoke all on function prevent_profile_role_change() from public,anon,authenticated;
@@ -175,3 +175,18 @@ end $$;
 drop trigger if exists trg_prevent_published_source_mutation on sources;
 create trigger trg_prevent_published_source_mutation before update or delete on sources for each row execute function prevent_published_source_mutation();
 revoke all on function prevent_published_source_mutation() from public,anon,authenticated;
+
+-- Protect source-to-article links after publication.
+create or replace function prevent_published_article_source_link_mutation()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare aid uuid;
+begin
+ aid:=case when tg_op='DELETE' then old.article_id else new.article_id end;
+ if exists(select 1 from articles a where a.id=aid and a.status='published') then
+   raise exception 'PUBLISHED_ARTICLE_SOURCE_LINK_IS_IMMUTABLE';
+ end if;
+ if tg_op='DELETE' then return old; else return new; end if;
+end $$;
+drop trigger if exists trg_prevent_published_article_source_link_mutation on article_sources;
+create trigger trg_prevent_published_article_source_link_mutation before insert or update or delete on article_sources for each row execute function prevent_published_article_source_link_mutation();
+revoke all on function prevent_published_article_source_link_mutation() from public,anon,authenticated;
