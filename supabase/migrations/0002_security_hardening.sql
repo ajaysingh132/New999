@@ -246,7 +246,7 @@ begin
  end if;
  if old.status in ('approved','scheduled','published') and (
    new.native_text is distinct from old.native_text or new.media_paths is distinct from old.media_paths or
-   new.link_url is distinct from old.link_url or new.platform is distinct from old.platform
+   new.link_url is distinct from old.link_url or new.platform is distinct from old.platform or new.approved_by is distinct from old.approved_by
  ) then raise exception 'APPROVED_SOCIAL_POST_CONTENT_IS_IMMUTABLE'; end if;
  if new.status='scheduled' and old.status is distinct from 'scheduled' and actual_role not in ('chief_editor','super_admin') then
    raise exception 'SOCIAL_SCHEDULING_REQUIRES_CHIEF_APPROVAL';
@@ -266,3 +266,13 @@ using(
  exists(select 1 from articles a where a.id=article_id and a.status='published')
  and exists(select 1 from sources s where s.id=source_id and s.verification in ('verified','official_statement'))
 );
+
+drop policy if exists "social_posts staff" on social_posts;
+create policy "social posts staff read" on social_posts for select to authenticated using(is_staff());
+create policy "social posts team insert" on social_posts for insert to authenticated
+with check(has_role(array['super_admin','chief_editor','managing_editor','social_media_manager']::app_role[]));
+create policy "social posts team update" on social_posts for update to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','social_media_manager']::app_role[]))
+with check(has_role(array['super_admin','chief_editor','managing_editor','social_media_manager']::app_role[]));
+create policy "social posts team delete" on social_posts for delete to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','social_media_manager']::app_role[]) and status in ('draft','ai_generated','editor_review'));
