@@ -5,8 +5,8 @@
 | M2 | Supabase Auth, profiles, roles, protected newsroom | Initial implementation; staging tests pending |
 | M3 | CMS and 10 editorial blocks, SEO article URLs | Initial implementation |
 | M4 | Workflow + Chief Editor approval gate | SQL hardening migration drafted; staging tests required |
-| M5 | Research, documents, OCR, AI adapter | Planned |
-| M6 | Social calendar and publishing integrations | Read-only view; platform APIs planned |
+| M5 | Research, private document upload, OCR, AI adapter | Private uploads + source-text storage + provider-agnostic draft adapter implemented; OCR extraction pending |
+| M6 | Social calendar and publishing integrations | Database-backed social drafts + Chief Editor approval implemented; platform APIs pending |
 | M7 | Ads and analytics | Planned |
 | M8 | PWA, accessibility, CI, production deployment | Planned |
 ## Required credentials
