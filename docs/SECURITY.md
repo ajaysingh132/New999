@@ -8,3 +8,4 @@
 - Audit logs are append-only for application users.
 - Before production, review every SECURITY DEFINER function and all RLS policies with Supabase Advisors; add storage policies, MFA for privileged roles, rate limits, and role-matrix tests.
 - Never apply a migration to production without a backup and successful staging test.
+\n- `SUPABASE_SERVICE_ROLE_KEY` is used only by the Super Admin invite server action. It must never be prefixed with `NEXT_PUBLIC_`, returned to clients, or committed. Configure Supabase Auth email delivery before using team invitations.\n
