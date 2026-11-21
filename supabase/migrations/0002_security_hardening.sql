@@ -276,3 +276,17 @@ using(has_role(array['super_admin','chief_editor','managing_editor','social_medi
 with check(has_role(array['super_admin','chief_editor','managing_editor','social_media_manager']::app_role[]));
 create policy "social posts team delete" on social_posts for delete to authenticated
 using(has_role(array['super_admin','chief_editor','managing_editor','social_media_manager']::app_role[]) and status in ('draft','ai_generated','editor_review'));
+
+-- Private newsroom document bucket. Uploads are restricted by Storage RLS.
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values('newsroom-documents','newsroom-documents',false,26214400,
+ array['application/pdf','image/jpeg','image/png','image/webp','text/plain','text/markdown','application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+on conflict(id) do update set public=false,file_size_limit=26214400,
+ allowed_mime_types=excluded.allowed_mime_types;
+
+create policy "newsroom documents staff read" on storage.objects for select to authenticated
+using(bucket_id='newsroom-documents' and is_staff());
+create policy "newsroom documents editorial upload" on storage.objects for insert to authenticated
+with check(bucket_id='newsroom-documents' and has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+create policy "newsroom documents admin delete" on storage.objects for delete to authenticated
+using(bucket_id='newsroom-documents' and has_role(array['super_admin','chief_editor','managing_editor']::app_role[]));
