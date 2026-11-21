@@ -1,14 +1,15 @@
 import Link from "next/link";
 import {signOut} from "@/app/actions";
-import { requireStaff } from "@/lib/auth";
-export const metadata = { title: "न्यूज़रूम डैशबोर्ड" };
-export default async function NewsroomPage() {
-  const { supabase, profile } = await requireStaff();
-  const { data: articles } = await supabase.from("articles").select("id,slug,headline_hi,status,updated_at").order("updated_at",{ascending:false}).limit(30);
-  const counts = (articles || []).reduce((acc:any,a:any)=>(acc[a.status]=(acc[a.status]||0)+1,acc),{});
-  return <main className="container dashboard"><aside className="panel side-nav"><strong>संपादकीय डेस्क</strong><span className="pill">{profile.role}</span><Link href="/newsroom">डैशबोर्ड</Link><Link href="/newsroom/new">नई खबर</Link><Link href="/social">सोशल कैलेंडर</Link>{profile.role==="super_admin"&&<Link href="/admin/team">टीम प्रबंधन</Link>}</aside><section>
-    <div className="flex flex-wrap justify-between items-center gap-3 mb-5"><div><h1 className="text-3xl font-bold">नमस्कार, {profile.full_name}</h1><p className="muted">आपकी भूमिका के अनुसार कार्य उपलब्ध हैं।</p></div><div className="flex gap-2"><Link className="btn btn-orange" href="/newsroom/new">+ नई खबर</Link><form action={signOut}><button className="btn btn-light" type="submit">लॉगआउट</button></form></div></div>
-    <div className="stat-grid mb-5">{["draft","research","fact_check","pending_chief"].map(s=><div className="panel stat" key={s}><strong>{counts[s]||0}</strong><span className="muted">{s.replaceAll("_"," ")}</span></div>)}</div>
-    <div className="panel"><h2 className="text-xl font-bold mb-3">हाल के लेख</h2>{articles?.length ? <div className="divide-y">{articles.map(a=><div className="py-3 flex flex-wrap justify-between gap-2" key={a.id}><div><b>{a.headline_hi}</b><div className="muted">{a.status} · {new Date(a.updated_at).toLocaleString("hi-IN")}</div></div><Link className="text-royal font-bold" href={"/newsroom/"+a.id}>खोलें →</Link></div>)}</div>:<p className="muted">अभी कोई लेख नहीं है। पहली खबर बनाएँ।</p>}</div>
-  </section></main>;
+import {requireStaff} from "@/lib/auth";
+export const metadata={title:"AI न्यूज़रूम"};
+export default async function NewsroomPage(){
+ const {supabase,profile}=await requireStaff();
+ const {data:articles}=await supabase.from("articles").select("id,slug,headline_hi,status,updated_at").order("updated_at",{ascending:false}).limit(30);
+ const counts=(articles||[]).reduce((acc:any,a:any)=>(acc[a.status]=(acc[a.status]||0)+1,acc),{});
+ return <main className="container dashboard"><aside className="panel side-nav"><strong>न्यूज़रूम</strong><span className="pill">{profile.role}</span><Link href="/newsroom">डैशबोर्ड</Link><Link href="/newsroom/new">न्यूज़ पोस्ट</Link><Link href="/social">सोशल कतार</Link><a href="#ads">विज्ञापन</a><a href="#live">LIVE</a>{profile.role==="super_admin"&&<Link href="/admin/team">टीम प्रबंधन</Link>}<form action={signOut}><button className="btn btn-light w-full mt-3" type="submit">लॉगआउट</button></form></aside>
+ <section><div className="flex flex-wrap justify-between items-center gap-3 mb-5"><div><h1 className="text-3xl font-bold">मुख्य संपादक न्यूज़रूम</h1><p className="muted">नमस्कार, {profile.full_name} · {profile.role}</p></div><Link className="btn btn-orange" href="/newsroom/new">+ नई खबर</Link></div>
+ <div className="stat-grid mb-5"><div className="panel stat"><strong>{counts.draft||0}</strong><span className="muted">ड्राफ्ट</span></div><div className="panel stat"><strong>{counts.fact_check||0}</strong><span className="muted">तथ्य-जांच</span></div><div className="panel stat"><strong>{counts.pending_chief||0}</strong><span className="muted">मुख्य संपादक समीक्षा</span></div><div className="panel stat"><strong>{counts.published||0}</strong><span className="muted">प्रकाशित</span></div></div>
+ <div className="panel"><h2 className="text-xl font-bold mb-3">संपादकीय कतार</h2>{articles?.length?articles.map(a=><div className="py-3 border-b flex flex-wrap justify-between gap-3" key={a.id}><div><b>{a.headline_hi}</b><div className="muted">{a.status} · {new Date(a.updated_at).toLocaleString("hi-IN")}</div></div><Link className="text-royal font-bold" href={"/newsroom/"+a.id}>खोलें →</Link></div>):<p className="muted">अभी कोई स्थानीय ड्राफ्ट नहीं। पहली खबर बनाएँ।</p>}</div>
+ <div className="grid mt-4"><div id="ads" className="panel"><h2>Adsterra Monetization</h2><p className="muted">Approved Adsterra script मिलने के बाद उसे यहाँ ad slot में जोड़ा जाएगा।</p><div className="adbox">ADSTERRA CODE SLOT</div></div><div id="live" className="panel"><h2>LIVE प्रसारण</h2><div className="video">▶ YouTube Live Player</div><p className="muted">YouTube Live stream URL/config यहाँ जोड़ा जाएगा।</p><a className="btn btn-primary" href="https://studio.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube Studio खोलें</a></div></div>
+ </section></main>;
 }
