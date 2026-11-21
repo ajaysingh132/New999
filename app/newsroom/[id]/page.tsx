@@ -8,6 +8,8 @@ export default async function ArticleDeskPage({params}:Props){
  const {data:article}=await supabase.from("articles").select("id,headline_hi,summary_hi,status,author_id,updated_at").eq("id",params.id).maybeSingle();
  if(!article)notFound();
  const {data:blocks}=await supabase.from("article_blocks").select("block_type,content,verification,sort_order").eq("article_id",article.id).order("sort_order");
+ const {data:citations}=await supabase.from("article_sources").select("note,sources(title,url,verification,storage_path)").eq("article_id",article.id);
+ const sourceItems=await Promise.all((citations||[]).map(async(item:any)=>{const source=item.sources;const path=source?.storage_path;if(!path)return {...item,signedUrl:null};const {data}=await supabase.storage.from("newsroom-documents").createSignedUrl(path,300);return {...item,signedUrl:data?.signedUrl||null};}));
  const labels:Record<string,string>={subject:"विषय",background:"पृष्ठभूमि",facts:"तथ्य",claims:"दावे",evidence:"प्रमाण",primary_sources:"प्राथमिक स्रोत",contested:"विवादित बिंदु",perspectives:"दृष्टिकोण",fact_check:"तथ्य-जांच",editorial_comment:"संपादकीय टिप्पणी"};
  const next:Record<string,string>={draft:"research",research:"fact_check",fact_check:"editorial_review",editorial_review:"pending_chief",rejected:"draft"};
  const target=next[article.status];
