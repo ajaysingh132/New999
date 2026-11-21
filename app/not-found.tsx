@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound(){return <main className="container py-20 text-center"><h1 className="text-4xl font-bold">समाचार उपलब्ध नहीं</h1><p className="muted my-4">यह पृष्ठ हटाया गया है या प्रकाशित नहीं है।</p><Link className="btn btn-primary" href="/">मुख्य पृष्ठ पर लौटें</Link></main>;}

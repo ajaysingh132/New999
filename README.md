@@ -1,21 +1,24 @@
-# संदर्भ — Digital Newsroom
+# संदर्भ — SANDARBH 2.0 AI Digital Newsroom
 
-Mobile-first Hindi digital newsroom MVP.
+GBSBFORYOU — खबर, दस्तावेज़, सत्यापन और संपादकीय एक ही न्यूज़रूम में।
 
-## Included
-- Home/news feed
-- AI-editor draft workflow (frontend prototype)
-- Chief-editor review gate
-- Article fact/claim/evidence structure
-- Social publishing calendar
-- Adsterra ad slot
-- YouTube Live control entry point
+## Product direction
+- Mobile-first Hindi newsroom; preserve Navy / Royal Blue / Orange visual identity.
+- Next.js App Router, Supabase PostgreSQL + Auth.
+- 10 editorial blocks: subject, background, facts, claims, evidence, primary_sources, contested, perspectives, fact_check, editorial_comment.
+- AI is an assistant only; it cannot publish autonomously.
+- Public articles use per-slug routes and metadata.
 
-## Production requirements
-GitHub Pages is static hosting. Real multi-user publishing, authentication, database persistence and server-side AI require a secure backend. Never put AI, GitHub, YouTube, or other secret keys in public browser code.
+## Stack
+Next.js 14 App Router · React 18 · TypeScript · Tailwind CSS · Supabase SSR/Auth/PostgreSQL.
 
-## Adsterra
-After the publisher account approves the website and ad unit, paste the generated Adsterra code into the marked ad slot.
+## Local setup
+See [docs/SETUP.md](docs/SETUP.md). Apply SQL migrations in order, copy `.env.example` to `.env.local`, then run `npm install && npm run dev`.
 
-## Live
-Start the stream in YouTube Studio, then configure the public player/embed URL in the live module.
+## Security
+See [docs/SECURITY.md](docs/SECURITY.md). Publication gates are enforced by PostgreSQL triggers, not client-side button state. Test all migrations on staging before production.
+
+## Current boundary
+The development branch contains the Next.js foundation, cookie-based auth, protected newsroom, Super Admin team invitations, 10-block draft entry, source text/URL capture, private document upload, source verification controls, article review/approval UI, social draft queue with Chief Editor approval, provider-agnostic AI drafting endpoint, SEO article routes, initial schema and hardening migration. CI lint/typecheck/build and staging verification are tracked separately. AI provider execution, OCR, uploads, automatic social publishing, analytics, and live video integration require credentials and separate tests.
+
+Legacy static HTML/CSS/JS files remain unchanged as the MVP reference. GitHub Pages is static demo hosting only; deploy the Next.js application on Vercel or another Node.js host.
