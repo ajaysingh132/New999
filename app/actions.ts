@@ -54,6 +54,27 @@ export async function approveForPublication(articleId:string){
  revalidatePath("/");revalidatePath("/newsroom");revalidatePath("/newsroom/"+articleId);
 }
 
+export async function createSocialPost(formData:FormData){
+ const {supabase,user,profile}=await requireStaff();
+ if(!["social_media_manager","managing_editor","chief_editor","super_admin"].includes(profile.role))throw new Error("आपकी भूमिका सोशल ड्राफ्ट बनाने की अनुमति नहीं देती।");
+ const platform=String(formData.get("platform")||"");
+ const allowed=["youtube","facebook","instagram","x","threads","telegram","whatsapp","linkedin"];
+ const nativeText=String(formData.get("native_text")||"").trim();
+ if(!allowed.includes(platform)||nativeText.length<2||nativeText.length>5000)throw new Error("सोशल प्लेटफॉर्म और 2–5000 अक्षरों का कंटेंट आवश्यक है।");
+ const articleId=String(formData.get("article_id")||"").trim()||null;
+ const {error}=await supabase.from("social_posts").insert({platform,content_type:String(formData.get("content_type")||"post"),native_text:nativeText,article_id:articleId,created_by:user.id,status:"draft"});
+ if(error)throw new Error(error.message);
+ revalidatePath("/social");
+}
+
+export async function approveSocialPost(postId:number){
+ const {supabase,user,profile}=await requireStaff();
+ if(!["chief_editor","super_admin"].includes(profile.role))throw new Error("केवल Chief Editor सोशल पोस्ट को स्वीकृत कर सकता है।");
+ const {error}=await supabase.from("social_posts").update({status:"approved",approved_by:user.id}).eq("id",postId);
+ if(error)throw new Error(error.message);
+ revalidatePath("/social");
+}
+
 export async function signOut(){
  const {supabase}=await requireStaff();
  await supabase.auth.signOut();
