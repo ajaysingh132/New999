@@ -8,7 +8,7 @@
 update public.profiles set role='super_admin'
 where id=(select id from auth.users where email='YOUR_ADMIN_EMAIL');
 ```
-6. Sign in at `/login`. Public sign-up is intentionally disabled.
+6. Sign in at `/login`. Public sign-up is intentionally disabled.\n7. To invite staff from `/admin/team`, set `SUPABASE_SERVICE_ROLE_KEY` as a server-only Vercel/local environment variable. Supabase Auth email delivery must be configured; never expose this key to browser code.
 ## Deploy
 Connect this branch to Vercel as a Preview deployment first. Set the environment variables in Vercel. Promote only after the build, database, login, RLS, and publication-gate tests pass.
 ## Not yet active
