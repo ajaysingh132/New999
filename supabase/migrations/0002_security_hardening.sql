@@ -68,7 +68,7 @@ begin
  end if;
  if old.status='published' and (
    new.headline_hi is distinct from old.headline_hi or new.headline_en is distinct from old.headline_en or
-   new.summary_hi is distinct from old.summary_hi or new.category_id is distinct from old.category_id
+   new.summary_hi is distinct from old.summary_hi or new.category_id is distinct from old.category_id or new.slug is distinct from old.slug or new.risk_level is distinct from old.risk_level or new.ai_assistance is distinct from old.ai_assistance or new.hero_image_path is distinct from old.hero_image_path
  ) then raise exception 'PUBLISHED_ARTICLE_REQUIRES_CORRECTION_WORKFLOW'; end if;
  new.updated_at=now();
  return new;
@@ -132,3 +132,46 @@ using (exists(select 1 from articles a where a.id=article_id and a.status<>'publ
 with check (exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
 create policy "blocks editorial delete" on article_blocks for delete to authenticated
 using (exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+
+-- Explicit Data API grants; RLS remains the row-level authorization boundary.
+grant usage on schema public to anon,authenticated;
+grant select on roles,permissions,categories,tags,articles,article_blocks,sources,advertisements to anon,authenticated;
+grant select,insert,update,delete on profiles,articles,article_blocks,article_tags,sources,research_sessions,research_documents,article_sources,fact_checks,editorial_reviews,approvals,revisions,social_posts,publication_logs,advertisements,analytics,audit_logs to authenticated;
+grant usage,select on all sequences in schema public to authenticated;
+
+-- Narrow source/research/fact-check writes to the relevant newsroom roles.
+drop policy if exists "sources staff write" on sources;
+create policy "sources editorial write" on sources for all to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]))
+with check(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+drop policy if exists "research sessions staff" on research_sessions;
+create policy "research roles manage sessions" on research_sessions for all to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker']::app_role[]))
+with check(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker']::app_role[]));
+drop policy if exists "research docs staff" on research_documents;
+create policy "research roles manage documents" on research_documents for all to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker']::app_role[]))
+with check(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker']::app_role[]));
+drop policy if exists "fact_checks staff" on fact_checks;
+create policy "fact checker writes" on fact_checks for all to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','fact_checker']::app_role[]))
+with check(has_role(array['super_admin','chief_editor','managing_editor','fact_checker']::app_role[]));
+drop policy if exists "editorial_reviews staff" on editorial_reviews;
+create policy "editorial reviewers write" on editorial_reviews for all to authenticated
+using(has_role(array['super_admin','chief_editor','managing_editor','content_editor']::app_role[]))
+with check(has_role(array['super_admin','chief_editor','managing_editor','content_editor']::app_role[]));
+
+-- Keep source material referenced by published stories immutable through the client API.
+create or replace function prevent_published_source_mutation()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare sid bigint;
+begin
+ sid:=case when tg_op='DELETE' then old.id else new.id end;
+ if exists(select 1 from article_sources ar join articles a on a.id=ar.article_id where ar.source_id=sid and a.status='published') then
+   raise exception 'PUBLISHED_ARTICLE_SOURCE_IS_IMMUTABLE';
+ end if;
+ if tg_op='DELETE' then return old; else return new; end if;
+end $$;
+drop trigger if exists trg_prevent_published_source_mutation on sources;
+create trigger trg_prevent_published_source_mutation before update or delete on sources for each row execute function prevent_published_source_mutation();
+revoke all on function prevent_published_source_mutation() from public,anon,authenticated;
