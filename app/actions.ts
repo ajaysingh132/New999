@@ -21,12 +21,12 @@ export async function createArticle(formData:FormData){
  const sourceFilePath=String(formData.get("source_file_path")||"").trim();
  if(sourceUrl){try{const parsed=new URL(sourceUrl);if(!["http:","https:"].includes(parsed.protocol))throw new Error();}catch{throw new Error("स्रोत URL मान्य http/https लिंक होना चाहिए।");}}
  if(sourceFilePath&&!sourceFilePath.startsWith(user.id+"/"))throw new Error("दस्तावेज़ पथ आपके लॉगिन खाते से मेल नहीं खाता।");
- if(sourceMaterial||sourceFilePath){
+ if(sourceMaterial||sourceFilePath||sourceUrl){
   const {data:source,error:sourceError}=await supabase.from("sources").insert({title:"Reporter source material — "+headline.slice(0,100),source_type:"other",url:sourceUrl||null,publisher:"Submitted in newsroom editor",verification:"unverified",uploaded_by:user.id,storage_path:sourceFilePath||null}).select("id").single();
   if(sourceError||!source)throw new Error(sourceError?.message||"स्रोत रिकॉर्ड सुरक्षित नहीं हुआ।");
   const {data:session,error:sessionError}=await supabase.from("research_sessions").insert({topic:headline,created_by:user.id,status:"completed",result:{source_material_received:Boolean(sourceMaterial),file_uploaded:Boolean(sourceFilePath)}}).select("id").single();
   if(sessionError||!session)throw new Error(sessionError?.message||"शोध सत्र सुरक्षित नहीं हुआ।");
-  const {error:docError}=await supabase.from("research_documents").insert({session_id:session.id,source_id:source.id,file_path:sourceFilePath||"inline://article-source-material",extracted_text:sourceMaterial||null,ocr_done:false});
+  const {error:docError}=await supabase.from("research_documents").insert({session_id:session.id,source_id:source.id,file_path:sourceFilePath||sourceUrl||"inline://article-source-material",extracted_text:sourceMaterial||null,ocr_done:false});
   if(docError)throw new Error(docError.message);
   const {error:linkError}=await supabase.from("article_sources").insert({article_id:article.id,source_id:source.id,note:"Reporter-submitted source; not independently verified"});
   if(linkError)throw new Error(linkError.message);
