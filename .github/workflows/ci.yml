@@ -15,7 +15,10 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - name: Production dependency audit\n        run: npm audit --omit=dev\n        continue-on-error: true\n      - run: npm run lint
+      - name: Production dependency audit
+        run: npm audit --omit=dev
+        continue-on-error: true
+      - run: npm run lint
       - run: npm run typecheck
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
