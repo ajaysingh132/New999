@@ -248,8 +248,11 @@ begin
    new.native_text is distinct from old.native_text or new.media_paths is distinct from old.media_paths or
    new.link_url is distinct from old.link_url or new.platform is distinct from old.platform
  ) then raise exception 'APPROVED_SOCIAL_POST_CONTENT_IS_IMMUTABLE'; end if;
- if new.status='published' and old.status not in ('approved','scheduled') and auth.uid() is not null then
-   raise exception 'SOCIAL_POST_MUST_BE_APPROVED_BEFORE_PUBLISHING';
+ if new.status='scheduled' and old.status is distinct from 'scheduled' and actual_role not in ('chief_editor','super_admin') then
+   raise exception 'SOCIAL_SCHEDULING_REQUIRES_CHIEF_APPROVAL';
+ end if;
+ if new.status='published' and auth.uid() is not null then
+   raise exception 'SOCIAL_POST_PUBLISHING_REQUIRES_SERVER_SIDE_PLATFORM_ADAPTER';
  end if;
  return new;
 end $$;
