@@ -101,7 +101,9 @@ export async function inviteTeamMember(formData:FormData){
  if(!url||!key)throw new Error("टीम आमंत्रण के लिए server-only SUPABASE_SERVICE_ROLE_KEY सेट करें।");
  const {createClient:adminClient}=await import("@supabase/supabase-js");
  const admin=adminClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
- const siteUrl=process.env.NEXT_PUBLIC_SITE_URL;\n if(!siteUrl)throw new Error("टीम आमंत्रण के लिए NEXT_PUBLIC_SITE_URL सेट करें।");\n const {data,error}=await admin.auth.admin.inviteUserByEmail(email,{data:{full_name:fullName},redirectTo:siteUrl+"/auth/callback?next=/newsroom"});
+ const siteUrl=process.env.NEXT_PUBLIC_SITE_URL;
+ if(!siteUrl)throw new Error("टीम आमंत्रण के लिए NEXT_PUBLIC_SITE_URL सेट करें।");
+ const {data,error}=await admin.auth.admin.inviteUserByEmail(email,{data:{full_name:fullName},redirectTo:siteUrl+"/auth/callback?next=/newsroom"});
  if(error||!data.user)throw new Error(error?.message||"टीम आमंत्रण नहीं भेजा जा सका।");
  const {error:profileError}=await admin.from("profiles").update({full_name:fullName,role}).eq("id",data.user.id);
  if(profileError)throw new Error("आमंत्रण भेजा गया, लेकिन भूमिका निर्धारित नहीं हुई: "+profileError.message);
