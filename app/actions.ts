@@ -89,6 +89,25 @@ export async function approveSocialPost(postId:number){
  revalidatePath("/social");
 }
 
+export async function inviteTeamMember(formData:FormData){
+ const {profile}=await requireStaff();
+ if(profile.role!=="super_admin")throw new Error("केवल Super Admin टीम सदस्य आमंत्रित कर सकता है।");
+ const email=String(formData.get("email")||"").trim().toLowerCase();
+ const fullName=String(formData.get("full_name")||"").trim();
+ const role=String(formData.get("role")||"reader");
+ const allowed=["chief_editor","managing_editor","reporter","researcher","fact_checker","content_editor","social_media_manager","reader","super_admin"];
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!fullName||fullName.length>120||!allowed.includes(role))throw new Error("ईमेल, नाम और मान्य भूमिका आवश्यक है।");
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
+ if(!url||!key)throw new Error("टीम आमंत्रण के लिए server-only SUPABASE_SERVICE_ROLE_KEY सेट करें।");
+ const {createClient:adminClient}=await import("@supabase/supabase-js");
+ const admin=adminClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
+ const {data,error}=await admin.auth.admin.inviteUserByEmail(email,{data:{full_name:fullName}});
+ if(error||!data.user)throw new Error(error?.message||"टीम आमंत्रण नहीं भेजा जा सका।");
+ const {error:profileError}=await admin.from("profiles").update({full_name:fullName,role}).eq("id",data.user.id);
+ if(profileError)throw new Error("आमंत्रण भेजा गया, लेकिन भूमिका निर्धारित नहीं हुई: "+profileError.message);
+ revalidatePath("/admin/team");redirect("/admin/team?invited=1");
+}
+
 export async function signOut(){
  const {supabase}=await requireStaff();
  await supabase.auth.signOut();
