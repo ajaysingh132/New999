@@ -19,6 +19,6 @@ See [docs/SETUP.md](docs/SETUP.md). Apply SQL migrations in order, copy `.env.ex
 See [docs/SECURITY.md](docs/SECURITY.md). Publication gates are enforced by PostgreSQL triggers, not client-side button state. Test all migrations on staging before production.
 
 ## Current boundary
-The development branch contains the Next.js foundation, cookie-based auth, protected newsroom, 10-block draft entry, article review/approval UI, SEO article routes, initial schema and hardening migration. Build and staging verification are still required. AI provider execution, OCR, uploads, automatic social publishing, analytics, and live video integration require credentials and separate tests.
+The development branch contains the Next.js foundation, cookie-based auth, protected newsroom, Super Admin team invitations, 10-block draft entry, source text/URL capture, private document upload, source verification controls, article review/approval UI, social draft queue with Chief Editor approval, provider-agnostic AI drafting endpoint, SEO article routes, initial schema and hardening migration. CI lint/typecheck/build and staging verification are tracked separately. AI provider execution, OCR, uploads, automatic social publishing, analytics, and live video integration require credentials and separate tests.
 
 Legacy static HTML/CSS/JS files remain unchanged as the MVP reference. GitHub Pages is static demo hosting only; deploy the Next.js application on Vercel or another Node.js host.
