@@ -1,6 +1,6 @@
 # Local setup
 1. Create a Supabase project.
-2. Run SQL Editor scripts in this order: `supabase/migrations/0001_init.sql`, `supabase/migrations/0002_security_hardening.sql`, then `supabase/seed.sql`.
+2. Run SQL Editor scripts in this order: `supabase/migrations/0001_init.sql`, `supabase/migrations/0002_security_hardening.sql`, `supabase/migrations/0003_revoke_trigger_rpc.sql`, then `supabase/seed.sql`.
 3. Copy `.env.example` to `.env.local`; enter the Supabase Project URL and Publishable Key.
 4. Run `npm install`, `npm run dev`; open http://localhost:3000.
 5. In Supabase Authentication, invite the first admin. Then, as project owner, promote the matching profile in SQL Editor:
