@@ -9,7 +9,9 @@ export async function POST(request:Request){
   if(error||!user)return NextResponse.json({error:"लॉगिन आवश्यक है।"},{status:401});
   const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).single();
   if(!profile||!allowed.includes(profile.role))return NextResponse.json({error:"आपकी भूमिका AI ड्राफ्ट की अनुमति नहीं देती।"},{status:403});
-  const declaredSize=Number(request.headers.get("content-length")||0);\n  if(declaredSize>40000)return NextResponse.json({error:"अनुरोध बहुत बड़ा है। स्रोत सामग्री सीमित करें।"},{status:413});\n  const {topic,sources}=await request.json();
+  const declaredSize=Number(request.headers.get("content-length")||0);
+  if(declaredSize>40000)return NextResponse.json({error:"अनुरोध बहुत बड़ा है। स्रोत सामग्री सीमित करें।"},{status:413});
+  const {topic,sources}=await request.json();
   if(typeof topic!=="string"||topic.trim().length<5||topic.length>500)return NextResponse.json({error:"विषय 5 से 500 अक्षरों के बीच दें।"},{status:400});
   if(typeof sources!=="string"||sources.length>30000)return NextResponse.json({error:"स्रोत सामग्री 30,000 अक्षरों से कम रखें।"},{status:400});
   const base=process.env.AI_API_BASE_URL,key=process.env.AI_API_KEY,model=process.env.AI_MODEL;
