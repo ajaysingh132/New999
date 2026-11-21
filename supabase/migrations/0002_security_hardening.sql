@@ -226,3 +226,33 @@ using(has_role(array['super_admin','chief_editor','managing_editor','reporter','
 with check(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
 create policy "article sources editorial delete" on article_sources for delete to authenticated
 using(has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+
+-- Social publishing is also gated: only Chief Editor may approve a social post.
+create or replace function enforce_social_post_gate()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare actual_role app_role;
+begin
+ actual_role:=current_app_role();
+ if tg_op='INSERT' then
+   if new.status not in ('draft','ai_generated') then raise exception 'SOCIAL_POST_MUST_START_AS_DRAFT'; end if;
+   if actual_role not in ('social_media_manager','managing_editor','chief_editor','super_admin') then raise exception 'SOCIAL_POST_CREATE_FORBIDDEN'; end if;
+   new.created_by:=auth.uid();
+   return new;
+ end if;
+ if new.status='approved' and old.status is distinct from 'approved' then
+   if actual_role not in ('chief_editor','super_admin') or new.approved_by is distinct from auth.uid() then
+     raise exception 'SOCIAL_POST_REQUIRES_CHIEF_APPROVAL';
+   end if;
+ end if;
+ if old.status in ('approved','scheduled','published') and (
+   new.native_text is distinct from old.native_text or new.media_paths is distinct from old.media_paths or
+   new.link_url is distinct from old.link_url or new.platform is distinct from old.platform
+ ) then raise exception 'APPROVED_SOCIAL_POST_CONTENT_IS_IMMUTABLE'; end if;
+ if new.status='published' and old.status not in ('approved','scheduled') and auth.uid() is not null then
+   raise exception 'SOCIAL_POST_MUST_BE_APPROVED_BEFORE_PUBLISHING';
+ end if;
+ return new;
+end $$;
+drop trigger if exists trg_enforce_social_post_gate on social_posts;
+create trigger trg_enforce_social_post_gate before insert or update on social_posts for each row execute function enforce_social_post_gate();
+revoke all on function enforce_social_post_gate() from public,anon,authenticated;
