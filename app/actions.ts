@@ -16,7 +16,9 @@ export async function createArticle(formData:FormData){
  if(error||!article)throw new Error(error?.message||"लेख सुरक्षित नहीं हुआ।");
  const rows=blockTypes.map((type,sort_order)=>({article_id:article.id,block_type:type,content:{text:String(formData.get(type)||"").trim()},sort_order})).filter(r=>r.content.text.length>0);
  if(rows.length){const {error:blockError}=await supabase.from("article_blocks").insert(rows);if(blockError)throw new Error(blockError.message);}
- const sourceMaterial=String(formData.get("source_material")||"").trim();\n const sourceUrl=String(formData.get("source_url")||"").trim();\n if(sourceUrl){try{const parsed=new URL(sourceUrl);if(!["http:","https:"].includes(parsed.protocol))throw new Error();}catch{throw new Error("स्रोत URL मान्य http/https लिंक होना चाहिए।");}}
+ const sourceMaterial=String(formData.get("source_material")||"").trim();
+ const sourceUrl=String(formData.get("source_url")||"").trim();
+ if(sourceUrl){try{const parsed=new URL(sourceUrl);if(!["http:","https:"].includes(parsed.protocol))throw new Error();}catch{throw new Error("स्रोत URL मान्य http/https लिंक होना चाहिए।");}}
  if(sourceMaterial){
   const {data:source,error:sourceError}=await supabase.from("sources").insert({title:"Reporter source material — "+headline.slice(0,100),source_type:"other",url:sourceUrl||null,publisher:"Submitted in newsroom editor",verification:"unverified",uploaded_by:user.id}).select("id").single();
   if(sourceError||!source)throw new Error(sourceError?.message||"स्रोत रिकॉर्ड सुरक्षित नहीं हुआ।");
