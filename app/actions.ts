@@ -11,7 +11,7 @@ export async function createArticle(formData:FormData){
  if(!headline)throw new Error("शीर्षक आवश्यक है।");
  const base=headline.normalize("NFKD").replace(/[^\p{L}\p{N}]+/gu,"-").replace(/^-|-$/g,"").slice(0,90)||"article";
  const slug=base+"-"+crypto.randomUUID().slice(0,8);
- const {data:article,error}=await supabase.from("articles").insert({slug,headline_hi:headline,summary_hi:String(formData.get("summary")||"").trim(),author_id:user.id,status:"draft",ai_assistance:"none"}).select("id").single();
+ const aiAssistance=String(formData.get("ai_assistance")||"none");\n const {data:article,error}=await supabase.from("articles").insert({slug,headline_hi:headline,summary_hi:String(formData.get("summary")||"").trim(),author_id:user.id,status:"draft",ai_assistance:aiAssistance}).select("id").single();
  if(error||!article)throw new Error(error?.message||"लेख सुरक्षित नहीं हुआ।");
  const rows=blockTypes.map((type,sort_order)=>({article_id:article.id,block_type:type,content:{text:String(formData.get(type)||"").trim()},sort_order})).filter(r=>r.content.text.length>0);
  if(rows.length){const {error:blockError}=await supabase.from("article_blocks").insert(rows);if(blockError)throw new Error(blockError.message);}
