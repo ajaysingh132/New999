@@ -8,9 +8,11 @@ alter table approvals add column if not exists content_hash text;
 create or replace function article_content_fingerprint(p_article_id uuid)
 returns text language sql stable security invoker set search_path=public,extensions as $$
  select encode(extensions.digest(convert_to(
-   coalesce((select jsonb_build_object('slug',a.slug,'headline_hi',a.headline_hi,'headline_en',a.headline_en,'summary_hi',a.summary_hi,'category_id',a.category_id,'risk_level',a.risk_level,'ai_assistance',a.ai_assistance,'hero_image_path',a.hero_image_path)::text from articles a where a.id=p_article_id),'{}')
-   || coalesce((select jsonb_agg(jsonb_build_object('block_type',b.block_type,'content',b.content,'verification',b.verification,'sort_order',b.sort_order) order by b.sort_order,b.id)::text from article_blocks b where b.article_id=p_article_id),'[]'),
- 'UTF8'),'sha256'),'hex');
+   jsonb_build_object(
+     'article',coalesce((select jsonb_build_object('slug',a.slug,'headline_hi',a.headline_hi,'headline_en',a.headline_en,'summary_hi',a.summary_hi,'category_id',a.category_id,'risk_level',a.risk_level,'ai_assistance',a.ai_assistance,'hero_image_path',a.hero_image_path) from articles a where a.id=p_article_id),'{}'::jsonb),
+     'blocks',coalesce((select jsonb_agg(jsonb_build_object('block_type',b.block_type,'content',b.content,'verification',b.verification,'sort_order',b.sort_order) order by b.sort_order,b.id) from article_blocks b where b.article_id=p_article_id),'[]'::jsonb),
+     'sources',coalesce((select jsonb_agg(jsonb_build_object('source_id',ar.source_id,'note',ar.note,'title',s.title,'source_type',s.source_type,'url',s.url,'verification',s.verification,'documents',coalesce((select jsonb_agg(rd.extracted_text order by rd.id) from research_documents rd where rd.source_id=s.id),'[]'::jsonb)) order by ar.source_id) from article_sources ar join sources s on s.id=ar.source_id where ar.article_id=p_article_id),'[]'::jsonb)
+   )::text,'UTF8'),'sha256'),'hex');
 $$;
 
 create or replace function prevent_profile_role_change()
