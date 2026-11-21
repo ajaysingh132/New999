@@ -99,8 +99,34 @@ revoke all on function protect_approval_record() from public,anon,authenticated;
 revoke all on function enforce_article_workflow() from public,anon,authenticated;
 revoke all on function handle_new_user() from public,anon,authenticated;
 revoke all on function log_audit(text,text,text,jsonb,jsonb) from public,anon,authenticated;
+revoke all on function current_app_role() from public,anon;
+revoke all on function is_staff() from public,anon;
+revoke all on function has_role(app_role[]) from public,anon;
 grant execute on function current_app_role() to authenticated;
 grant execute on function is_staff() to authenticated;
 grant execute on function has_role(app_role[]) to authenticated;
 revoke all on function article_content_fingerprint(uuid) from public,anon;
 grant execute on function article_content_fingerprint(uuid) to authenticated;
+
+-- Least-privilege write access: newsroom roles only, not social-only or reader accounts.
+drop policy if exists "articles staff insert" on articles;
+create policy "articles editorial insert" on articles for insert to authenticated
+with check (
+  has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[])
+  and (author_id=(select auth.uid()) or author_id is null)
+);
+drop policy if exists "articles staff update" on articles;
+create policy "articles editorial update" on articles for update to authenticated
+using (has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]))
+with check (has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+
+drop policy if exists "blocks follow article" on article_blocks;
+create policy "blocks read" on article_blocks for select
+using (exists(select 1 from articles a where a.id=article_id and (a.status='published' or is_staff())));
+create policy "blocks editorial insert" on article_blocks for insert to authenticated
+with check (exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+create policy "blocks editorial update" on article_blocks for update to authenticated
+using (exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]))
+with check (exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
+create policy "blocks editorial delete" on article_blocks for delete to authenticated
+using (exists(select 1 from articles a where a.id=article_id and a.status<>'published') and has_role(array['super_admin','chief_editor','managing_editor','reporter','researcher','fact_checker','content_editor']::app_role[]));
